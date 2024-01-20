@@ -22,24 +22,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.translatorapp.navigation.Screens
+import com.example.translatorapp.repository.FavoriteTranslations
+import com.example.translatorapp.repository.FavoritesState
+import com.example.translatorapp.repository.FavoritesViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun FavoritesScreen(
     navController: NavController
 ) {
+    val viewModel:  FavoritesViewModel = viewModel()
+    val state = viewModel.state.collectAsState()
 
-    val textList = listOf(
-        "Favorites",
-        "Helloo",
-        "I am interesting"
-    )
+    when(state.value) {
+        is FavoritesState.Loading -> Loading()
+        is FavoritesState.Success -> FavoritesContent(
+            state = (state.value as FavoritesState.Success).state,
+            navController = navController
+        )
+    }
+}
+@Composable
+fun Loading(){
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FavoritesContent(
+    state: FavoriteTranslations?,
+    navController: NavController
+) {
+
+    val list = mutableListOf<String>()
+    if (state != null) {
+        list.addAll(state.FavoritedTranslations)
+    }
+    else{
+        list.add("No translations favorited")
+    }
+
 
     // Display the fetched data using LazyColumn
     Surface(color = MaterialTheme.colorScheme.background) {
@@ -53,7 +83,11 @@ fun FavoritesScreen(
                 ) },
                 navigationIcon = {
                     IconButton(
-                        onClick = { navController.navigate(Screens.MainScreen.route) }
+                        onClick = {
+                            navController.navigate(Screens.MainScreen.route)
+                            navController.popBackStack(Screens.FavoritesScreen.route, true)
+
+                        }
                     ) {
                         Icon(
                             Icons.Default.ArrowBack,
@@ -67,9 +101,9 @@ fun FavoritesScreen(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(textList) { item ->
+                items(list) { item ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         elevation = CardDefaults.cardElevation(4.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface),
                         shape = MaterialTheme.shapes.medium
@@ -87,4 +121,5 @@ fun FavoritesScreen(
         }
     }
     
+
 }

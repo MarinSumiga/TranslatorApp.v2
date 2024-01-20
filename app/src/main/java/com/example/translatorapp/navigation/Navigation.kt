@@ -13,8 +13,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun Navigation() {
     val navController = rememberNavController()
-    val firebaseAuth: FirebaseAuth
-    firebaseAuth = FirebaseAuth.getInstance()
+    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     NavHost(navController =navController , startDestination = Screens.SignInScreen.route){
         
         composable(route = Screens.MainScreen.route){

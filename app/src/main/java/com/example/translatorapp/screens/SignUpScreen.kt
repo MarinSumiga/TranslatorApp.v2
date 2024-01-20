@@ -33,8 +33,7 @@ fun SignUpScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val firebaseAuth: FirebaseAuth
-    firebaseAuth = FirebaseAuth.getInstance()
+    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     val context = LocalContext.current
 
     Column(
@@ -44,7 +43,7 @@ fun SignUpScreen(
     ) {
 
         Text(
-            text = "Sign In Screen",
+            text = "Sign Up Screen",
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth()
@@ -75,6 +74,7 @@ fun SignUpScreen(
                         .addOnCompleteListener {
                             if (it.isSuccessful) {
                                 navController.navigate(Screens.SignInScreen.route)
+                                navController.popBackStack(Screens.SignUpScreen.route, true)
                                 Toast.makeText(context, "Sign Up Successful", Toast.LENGTH_SHORT)
                                     .show()
                             } else {

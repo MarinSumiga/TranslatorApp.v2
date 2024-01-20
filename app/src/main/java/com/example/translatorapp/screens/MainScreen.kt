@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,13 +50,14 @@ import com.example.translatorapp.DE
 import com.example.translatorapp.EN
 import com.example.translatorapp.ES
 import com.example.translatorapp.FR
-import com.example.translatorapp.repository.FavoiritesRepository
 import com.example.translatorapp.HR
 import com.example.translatorapp.navigation.Screens
 import com.example.translatorapp.SpeechToText
 import com.example.translatorapp.TranslatorClass
 import com.example.translatorapp.outputText
+import com.example.translatorapp.repository.FavoritesRepository
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 var speechLanguage =  "HR"
 var baseLanguage =  HR
@@ -68,7 +70,7 @@ fun TranslatorScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val database = FavoiritesRepository()
+    val database = FavoritesRepository()
 
 
     Column(
@@ -82,7 +84,6 @@ fun TranslatorScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ){
-            Spacer(modifier = Modifier.width(16.dp))
             LogoutUser(navController)
             Spacer(modifier = Modifier.width(16.dp))
             MenuButton(navController)
@@ -156,9 +157,11 @@ fun getTextInput(
 
 @Composable
 fun TranslatedTextBox(
-    database: FavoiritesRepository,
+    database: FavoritesRepository,
     context: Context
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier
             .padding(all = 16.dp)
@@ -187,7 +190,9 @@ fun TranslatedTextBox(
         )
         OutlinedButton(
             onClick = {
-                database.saveTextToFirestore(outputText.value,context)
+                coroutineScope.launch {
+                    database.saveTextToFirestore(outputText.value,context)
+                }
             },
             modifier = Modifier.align(Alignment.BottomEnd),
         ) {
@@ -204,8 +209,7 @@ fun TranslatedTextBox(
 fun LogoutUser(
     navController: NavController
 ){
-    val firebaseAuth: FirebaseAuth
-    firebaseAuth = FirebaseAuth.getInstance()
+    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     var email = firebaseAuth.currentUser?.email // Get the current user's email from FirebaseAuth.
     email = email?.substringBefore("@")
     Row {
@@ -215,10 +219,12 @@ fun LogoutUser(
         onClick = {
             firebaseAuth.signOut()
             navController.navigate(Screens.SignInScreen.route)
+            navController.popBackStack(Screens.MainScreen.route, true) // Pop back to the previous screen in the nav Controller
         }
     ) {
         Text("SignOut")
     }
+
 }
 @Composable
 fun MenuButton(
@@ -289,7 +295,7 @@ fun ButtonForSpeechToText(
 @Composable
 fun DropDownBaseSelector(
 ){
-    var isExpanded = remember {
+    val isExpanded = remember {
         mutableStateOf(false)
     }
     ExposedDropdownMenuBox(
@@ -361,7 +367,7 @@ fun DropDownBaseSelector(
 @Composable
 fun DropDownTargetSelector(){
 
-    var isExpanded = remember {
+    val isExpanded = remember {
         mutableStateOf(false)
     }
 
