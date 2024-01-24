@@ -71,7 +71,6 @@ fun FavoritesContent(
     }
 
 
-    // Display the fetched data using LazyColumn
     Surface(color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopAppBar(
@@ -99,7 +98,7 @@ fun FavoritesContent(
             )
             LazyColumn(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(list) { item ->
                     Card(
