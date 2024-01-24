@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -41,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,6 +53,7 @@ import com.example.translatorapp.EN
 import com.example.translatorapp.ES
 import com.example.translatorapp.FR
 import com.example.translatorapp.HR
+import com.example.translatorapp.R
 import com.example.translatorapp.navigation.Screens
 import com.example.translatorapp.SpeechToText
 import com.example.translatorapp.TranslatorClass
@@ -275,14 +278,14 @@ fun ButtonForSpeechToText(
                 }
             },
             modifier = Modifier
-                .padding(all = 8.dp)
-                .size(50.dp),
-            shape = CircleShape,
+                .padding()
+                .size(70.dp),
+            shape = MaterialTheme.shapes.medium,
         ) {
             Icon(
-                imageVector = Icons.Default.Call,
-                contentDescription = null,
-                modifier = Modifier
+                painter = painterResource(id = R.drawable.mic),
+                contentDescription = "Microphone",
+                modifier = Modifier.size(70.dp)
             )
         }
 
