@@ -16,11 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.PlayArrow
+ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -45,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -185,6 +183,7 @@ fun TranslatedTextBox(
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp),
             style = TextStyle(color = Color.DarkGray, fontSize = 24.sp),
+            textDecoration = TextDecoration.Underline
         )
         Text(
             outputText.value,
@@ -288,9 +287,7 @@ fun ButtonForSpeechToText(
                 modifier = Modifier.size(70.dp)
             )
         }
-
     }
-
 }
 
 
