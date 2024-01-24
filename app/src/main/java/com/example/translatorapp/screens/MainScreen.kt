@@ -184,7 +184,7 @@ fun TranslatedTextBox(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp),
-            style = TextStyle(color = Color.Cyan, fontSize = 24.sp),
+            style = TextStyle(color = Color.DarkGray, fontSize = 24.sp),
         )
         Text(
             outputText.value,
