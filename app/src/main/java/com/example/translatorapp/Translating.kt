@@ -25,8 +25,8 @@ const val FR = FRENCH
 class TranslatorClass {
     private val options =
         TranslatorOptions.Builder()
-            .setSourceLanguage(baseLanguage)
-            .setTargetLanguage(secondLanguage)
+            .setSourceLanguage(baseLanguage.value)
+            .setTargetLanguage(secondLanguage.value)
             .build()
     private val languageTranslator = Translation.getClient(options)
 
@@ -48,7 +48,6 @@ class TranslatorClass {
                 ).show()
             }
     }
-
 
     private fun downloadModelIfNotDownloaded(
         context: Context
@@ -74,22 +73,19 @@ class TranslatorClass {
             }
     }
 
-
-    /*
-    private val frenchModel = TranslateRemoteModel.Builder(FRENCH).build()
-    private val spanishModel = TranslateRemoteModel.Builder(SPANISH).build()
-    private val germanModel = TranslateRemoteModel.Builder(GERMAN).build()
-    private val conditions = DownloadConditions.Builder()
-        .requireWifi()
-        .build()
-    private val modelManager = RemoteModelManager.getInstance()
-
-    init {
-        modelManager.download(frenchModel,conditions)
-        modelManager.download(spanishModel,conditions)
-        modelManager.download(germanModel,conditions)
-    }
-    */
+//    private val frenchModel = TranslateRemoteModel.Builder(FRENCH).build()
+//    private val spanishModel = TranslateRemoteModel.Builder(SPANISH).build()
+//    private val germanModel = TranslateRemoteModel.Builder(GERMAN).build()
+//    private val conditions = DownloadConditions.Builder()
+//        .requireWifi()
+//        .build()
+//    private val modelManager = RemoteModelManager.getInstance()
+//
+//    init {
+//        modelManager.download(frenchModel,conditions)
+//        modelManager.download(spanishModel,conditions)
+//        modelManager.download(germanModel,conditions)
+//    }
 
 }
 

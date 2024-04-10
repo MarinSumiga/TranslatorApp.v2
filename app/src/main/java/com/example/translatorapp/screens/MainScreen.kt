@@ -1,8 +1,8 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.example.translatorapp.screens
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -16,10 +16,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
- import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -27,20 +34,25 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -52,71 +64,179 @@ import com.example.translatorapp.ES
 import com.example.translatorapp.FR
 import com.example.translatorapp.HR
 import com.example.translatorapp.R
-import com.example.translatorapp.navigation.Screens
 import com.example.translatorapp.SpeechToText
 import com.example.translatorapp.TranslatorClass
+import com.example.translatorapp.navigation.Screens
 import com.example.translatorapp.outputText
 import com.example.translatorapp.repository.FavoritesRepository
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 var speechLanguage =  "HR"
-var baseLanguage =  HR
-var secondLanguage = EN
+var baseLanguage = mutableStateOf(HR)
+var secondLanguage  = mutableStateOf(EN)
 var x = ""
 val textInput =  mutableStateOf("")
 
 @Composable
-fun TranslatorScreen(
-    navController: NavController
-) {
+fun TranslatorScreen(navController: NavController) {
     val context = LocalContext.current
     val database = FavoritesRepository()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            NavigationMenu(navController, scope, drawerState)
+        },
+        gesturesEnabled = true,
+        content = {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    MenuButton(scope, drawerState) // Open drawer on button click
+                }
+
+                ScreenTitle("Translator")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row {
+                    Spacer(modifier = Modifier.width(16.dp))
+                    LanguageDropdownMenu(
+                        selectedLanguage = baseLanguage.value,
+                        onLanguageSelected = { newLanguage ->
+                            baseLanguage.value = newLanguage
+                            speechLanguage = newLanguage
+                        },
+                        languages = listOf(HR, EN, DE, ES, FR),
+                        label = "Base"
+                    )
+
+                    Spacer(modifier = Modifier.width(30.dp))
+
+                    LanguageDropdownMenu(
+                        selectedLanguage = secondLanguage.value,
+                        onLanguageSelected = { secondLanguage.value = it },
+                        languages = listOf(HR, EN, DE, ES, FR),
+                        label = "Target"
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row {
+                    x = getTextInput()
+                    ButtonForSpeechToText(
+                        speech = SpeechToText(
+                            speechLanguage,
+                            context,
+                            onTextRecognized = { results -> textInput.value = results }
+                        )
+                    )
+                }
+
+                ButtonForTranslating(
+                    translation = TranslatorClass(), x
+                )
+
+                TranslatedTextBox(database, context)
+            }
+        }
+    )
+}
+
+@Composable
+fun MenuButton( scope: CoroutineScope, drawerState: DrawerState) {
+    IconButton(
+        onClick = { scope.launch { drawerState.open() } }
+    ) {
+        Icon(imageVector = Icons.Default.Menu,
+            contentDescription = "Menu",
+            tint = Color.Black
+        )
+    }
+}
+
+// Composable for Navigation Menu
+@Composable
+fun NavigationMenu(
+    navController: NavController,
+    scope: CoroutineScope,
+    drawerState: DrawerState
+) {
+    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    var email = firebaseAuth.currentUser?.email
+    email = email?.substringBefore("@")
 
     Column(
+        modifier = Modifier.fillMaxWidth(0.7f)
+    ) {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
-    ){
+                .background(Color.White)
+        ) {
+            Column(modifier = Modifier.align(Alignment.TopStart)) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, bottom = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        Icon(Icons.Default.Person, contentDescription = "User", tint = Color.Black)
+                        Text("Dobrodošli, $email", style = MaterialTheme.typography.headlineSmall, color = Color.Black)
+                    }
+                }
 
-        Row (
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ){
-            LogoutUser(navController)
-            Spacer(modifier = Modifier.width(16.dp))
-            MenuButton(navController)
+                Spacer(modifier = Modifier.height(16.dp))
+                // 'Favorites' navigation item
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Favorite, contentDescription = "Favorites") },
+                    label = { Text("Favorites") },
+                    selected = false,
+                    onClick = {
+                        navController.navigate(Screens.FavoritesScreen.route)
+                        scope.launch { drawerState.close() } // Close the drawer
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Black, shape = RoundedCornerShape(24.dp))
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+                // 'Logout' navigation item
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.ExitToApp, contentDescription = "Logout") },
+                    label = { Text("Logout") },
+                    selected = false,
+                    onClick = {
+                        firebaseAuth.signOut()
+                        navController.navigate(Screens.SignInScreen.route) {
+                            popUpTo(Screens.MainScreen.route) { inclusive = true }
+                        }
+                        scope.launch { drawerState.close() } // Close the drawer
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color.Black, shape = RoundedCornerShape(24.dp))
+                )
+            }
         }
-
-        ScreenTitle("Translator")
-
-        Row {
-            Spacer(modifier = Modifier.width(16.dp))
-            DropDownBaseSelector()
-            Spacer(modifier = Modifier.width(30.dp))
-            DropDownTargetSelector()
-            Spacer(modifier = Modifier.width(16.dp))
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row{
-            x = getTextInput()
-            ButtonForSpeechToText(
-                speech = SpeechToText(
-                    speechLanguage,
-                    context,
-                    onTextRecognized = { results -> textInput.value = results })
-            )
-        }
-
-        ButtonForTranslating(
-            translation = TranslatorClass(), x
-        )
-
-        TranslatedTextBox(database,context)
     }
 }
 
@@ -166,15 +286,15 @@ fun TranslatedTextBox(
     Box(
         modifier = Modifier
             .padding(all = 16.dp)
-            .background(color = Color.White)
+            .background(color = Color.White, shape = RoundedCornerShape(8.dp)) // Rounded corners
             .border(
                 width = 1.dp,
-                color = Color.Black,
-                shape = MaterialTheme.shapes.medium
+                color = Color.LightGray, // Softer border color
+                shape = RoundedCornerShape(8.dp)
             )
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(8.dp)) // Subtle shadow
             .height(300.dp)
             .fillMaxWidth()
-
 
     ) {
         Text(
@@ -182,7 +302,11 @@ fun TranslatedTextBox(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp),
-            style = TextStyle(color = Color.DarkGray, fontSize = 24.sp),
+            style = TextStyle(
+                color = Color.DarkGray,
+                fontSize = 20.sp,
+                fontFamily = FontFamily.SansSerif
+            ),
             textDecoration = TextDecoration.Underline
         )
         Text(
@@ -190,58 +314,27 @@ fun TranslatedTextBox(
             modifier = Modifier.padding(top = 48.dp, start = 8.dp,end = 8.dp),
             style = TextStyle(color = Color.Black, fontSize = 20.sp)
         )
-        OutlinedButton(
+        Button(
             onClick = {
-                coroutineScope.launch {
-                    database.saveTextToFirestore(outputText.value,context)
+                if(outputText.value != "") {
+                    coroutineScope.launch {
+                        database.saveTextToFirestore(outputText.value,context)
+                    }
+                }
+                else {
+                    Toast.makeText(context, "Favorite cannot be empty!", Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.align(Alignment.BottomEnd),
+            shape = RoundedCornerShape(50.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Blue)
         ) {
             Icon(
-                Icons.Default.Star,
-                contentDescription = "Star",
+                Icons.Default.FavoriteBorder,
+                contentDescription = "Heart",
                 tint = Color.Blue,
             )
         }
-    }
-
-}
-@Composable
-fun LogoutUser(
-    navController: NavController
-){
-    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
-    var email = firebaseAuth.currentUser?.email // Get the current user's email from FirebaseAuth.
-    email = email?.substringBefore("@")
-    Row {
-        Text("Hello, $email!", fontSize = 20.sp, style = TextStyle(Color.Black))
-    }
-    Button(
-        onClick = {
-            firebaseAuth.signOut()
-            navController.navigate(Screens.SignInScreen.route)
-            navController.popBackStack(Screens.MainScreen.route, true) // Pop back to the previous screen in the nav Controller
-        }
-    ) {
-        Text("SignOut")
-    }
-
-}
-@Composable
-fun MenuButton(
-    navController: NavController
-) {
-    IconButton(
-        onClick = {
-            navController.navigate(Screens.FavoritesScreen.route)
-        }
-    ) {
-        Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = "Menu",
-            tint = Color.Black
-        )
     }
 }
 
@@ -255,11 +348,14 @@ fun ButtonForTranslating(translation: TranslatorClass, text:String) {
         },
         modifier = Modifier
             .padding(all = 16.dp)
-            .fillMaxWidth()
+            .fillMaxWidth() ,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
     ) {
-        Text(text = "Translate", style = TextStyle(fontSize = 20.sp))
+        Text(text = "Translate", style = TextStyle(fontSize = 20.sp), color = Color.White)
     }
 }
+
+
 @Composable
 fun ButtonForSpeechToText(
     speech: SpeechToText,
@@ -277,160 +373,62 @@ fun ButtonForSpeechToText(
                 }
             },
             modifier = Modifier
-                .padding()
-                .size(70.dp),
-            shape = MaterialTheme.shapes.medium,
+                .size(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Blue),
+            shape = RoundedCornerShape(percent = 50)
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.mic),
                 contentDescription = "Microphone",
-                modifier = Modifier.size(70.dp)
+//                modifier = Modifier.size(40.dp)
             )
         }
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DropDownBaseSelector(
-){
-    val isExpanded = remember {
-        mutableStateOf(false)
-    }
+fun LanguageDropdownMenu(
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    languages: List<String>,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var currentSelectedLanguage by remember { mutableStateOf(selectedLanguage) }
+
     ExposedDropdownMenuBox(
-        expanded = isExpanded.value,
-        onExpandedChange = {isExpanded.value = it}
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.width(150.dp)
     ) {
         TextField(
-            label = {
-                Text(text = "Choose base language")
-            },
-            maxLines = 2,
-            value =  baseLanguage,
-            onValueChange ={},
             readOnly = true,
+            value = currentSelectedLanguage,
+            onValueChange = {},
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             colors = ExposedDropdownMenuDefaults.textFieldColors(),
-            modifier = Modifier
-                .menuAnchor()
-                .width(150.dp)
+            modifier = Modifier.menuAnchor()
         )
+
         ExposedDropdownMenu(
-            expanded = isExpanded.value,
-            onDismissRequest = { isExpanded.value = false }
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
+            languages.forEach { language ->
                 DropdownMenuItem(
-                    text = { Text(text = "HR") },
                     onClick = {
-                        baseLanguage = HR
-                        speechLanguage =  "HR"
-                        isExpanded.value = false
-                    }
+                        currentSelectedLanguage = language
+                        onLanguageSelected(language) // Update the selected language
+                        expanded = false
+                    },
+                    text = {language.let { Text(it) }}
                 )
-            DropdownMenuItem(
-                text = { Text(text = "EN") },
-                onClick = {
-                    baseLanguage = EN
-                    speechLanguage =  "EN"
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "DE") },
-                onClick = {
-                    baseLanguage = DE
-                    speechLanguage =  "DE"
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "ES") },
-                onClick = {
-                    baseLanguage = ES
-                    speechLanguage =  "ES"
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "FR") },
-                onClick = {
-                    baseLanguage = FR
-                    speechLanguage =  "FR"
-                    isExpanded.value = false
-                }
-            )
-        }
-    }
-
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DropDownTargetSelector(){
-
-    val isExpanded = remember {
-        mutableStateOf(false)
-    }
-
-    ExposedDropdownMenuBox(
-        expanded = isExpanded.value,
-        onExpandedChange = {isExpanded.value = it}
-    ) {
-        TextField(
-            label = {
-                Text(text = "Choose target language")
-
-            },
-            maxLines = 2,
-            value =  secondLanguage,
-            onValueChange ={},
-            readOnly = true,
-            colors = ExposedDropdownMenuDefaults.textFieldColors(),
-            modifier = Modifier
-                .menuAnchor()
-                .width(150.dp)
-        )
-
-        ExposedDropdownMenu(
-            expanded = isExpanded.value,
-            onDismissRequest = { isExpanded.value = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text(text = "HR") },
-                onClick = {
-                    secondLanguage = HR
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "EN") },
-                onClick = {
-                    secondLanguage = EN
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "DE") },
-                onClick = {
-                    secondLanguage = DE
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "ES") },
-                onClick = {
-                    secondLanguage = ES
-                    isExpanded.value = false
-                }
-            )
-            DropdownMenuItem(
-                text = { Text(text = "FR") },
-                onClick = {
-                    secondLanguage = FR
-                    isExpanded.value = false
-                }
-            )
+            }
         }
     }
 }
+
 
 
