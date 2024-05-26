@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,20 +28,38 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.translatorapp.navigation.Screens
-import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun SignInScreen(
     navController: NavController
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    val viewModel: SignInViewModel = viewModel()
+    val state = viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    when(state.value) {
+        is SignInState.Idle -> SignInContent(
+            viewModel = viewModel,
+            navController = navController,
+        )
+        is SignInState.Success -> TranslatorScreen(
+            navController = navController,
+        )
+        is SignInState.Error -> Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+    }
+}
+
+@Composable
+fun SignInContent(
+    viewModel: SignInViewModel,
+    navController: NavController,
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier.padding(16.dp),
@@ -74,18 +93,14 @@ fun SignInScreen(
         Row(modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = {
-                    if (email.isNotEmpty() && password.isNotEmpty()) {
-
-                        firebaseAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                Toast.makeText(context,"Login successful",Toast.LENGTH_SHORT).show()
-                                navController.navigate(Screens.MainScreen.route)
-                            } else {
-                                Toast.makeText(context, it.exception.toString(), Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                    if (viewModel.checkIsInputValid(email,password)) {
+                        viewModel.signIn(email, password)
                     } else {
-                        Toast.makeText(context, "Empty Fields Are not Allowed !!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            context,
+                            "Empty Fields Are not Allowed !!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 },
                 modifier = Modifier.weight(1f)

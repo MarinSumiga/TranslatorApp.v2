@@ -23,6 +23,18 @@ class FavoritesViewModel(
 
     val state = MutableStateFlow<FavoritesState>(FavoritesState.Loading)
 
+    fun SaveToFavorites(item: String, context: Context) {
+        viewModelScope.launch {
+            try {
+                repository.saveTextToFirestore(item, context)
+                // Get updated favorites from Firestore
+                val updatedFavorites = repository.getFavorites()
+                state.value = FavoritesState.Success(updatedFavorites)
+            } catch (e: Exception) {
+                // Handle the error
+            }
+        }
+    }
     private suspend fun getFavorites() {
         val result = repository.getFavorites()
         state.value = FavoritesState.Success(result)
@@ -31,11 +43,9 @@ class FavoritesViewModel(
         viewModelScope.launch {
             try {
                 repository.deleteFavoriteFromFirestore(item, context)
-
                 // Get updated favorites from Firestore
                 val updatedFavorites = repository.getFavorites()
                 state.value = FavoritesState.Success(updatedFavorites)
-
             } catch (e: Exception) {
                 // Handle the error
             }

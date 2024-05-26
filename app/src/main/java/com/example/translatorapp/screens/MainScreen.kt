@@ -57,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.translatorapp.DE
 import com.example.translatorapp.EN
@@ -69,7 +70,7 @@ import com.example.translatorapp.TranslatorClass
 import com.example.translatorapp.navigation.Screens
 import com.example.translatorapp.outputText
 import com.example.translatorapp.repository.FavoritesRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.example.translatorapp.repository.FavoritesViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -85,11 +86,12 @@ fun TranslatorScreen(navController: NavController) {
     val database = FavoritesRepository()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val viewModel:  MainViewModel = viewModel()
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            NavigationMenu(navController, scope, drawerState)
+            NavigationMenu(navController, scope, drawerState,viewModel)
         },
         gesturesEnabled = true,
         content = {
@@ -104,7 +106,7 @@ fun TranslatorScreen(navController: NavController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    MenuButton(scope, drawerState) // Open drawer on button click
+                    MenuButton(scope, drawerState)
                 }
 
                 ScreenTitle("Translator")
@@ -174,12 +176,9 @@ fun MenuButton( scope: CoroutineScope, drawerState: DrawerState) {
 fun NavigationMenu(
     navController: NavController,
     scope: CoroutineScope,
-    drawerState: DrawerState
+    drawerState: DrawerState,
+    viewModel:  MainViewModel
 ) {
-    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
-    var email = firebaseAuth.currentUser?.email
-    email = email?.substringBefore("@")
-
     Column(
         modifier = Modifier.fillMaxWidth(0.7f)
     ) {
@@ -199,7 +198,7 @@ fun NavigationMenu(
                         horizontalArrangement = Arrangement.Start
                     ) {
                         Icon(Icons.Default.Person, contentDescription = "User", tint = Color.Black)
-                        Text("Dobrodošli, $email", style = MaterialTheme.typography.headlineSmall, color = Color.Black)
+                        Text("Dobrodošli, ${viewModel.name.value}", style = MaterialTheme.typography.headlineSmall, color = Color.Black)
                     }
                 }
 
@@ -215,6 +214,7 @@ fun NavigationMenu(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
                         .border(1.dp, Color.Black, shape = RoundedCornerShape(24.dp))
                 )
 
@@ -225,7 +225,7 @@ fun NavigationMenu(
                     label = { Text("Logout") },
                     selected = false,
                     onClick = {
-                        firebaseAuth.signOut()
+                        viewModel.signOut()
                         navController.navigate(Screens.SignInScreen.route) {
                             popUpTo(Screens.MainScreen.route) { inclusive = true }
                         }
@@ -233,6 +233,7 @@ fun NavigationMenu(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
                         .border(1.dp, Color.Black, shape = RoundedCornerShape(24.dp))
                 )
             }
@@ -264,6 +265,7 @@ fun ScreenTitle(
 
 @Composable
 fun getTextInput(
+
 ): String{
     TextField(
         value = textInput.value, onValueChange = { textInput.value = it},
@@ -279,7 +281,8 @@ fun getTextInput(
 @Composable
 fun TranslatedTextBox(
     database: FavoritesRepository,
-    context: Context
+    context: Context,
+    favoritesViewMoodel: FavoritesViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -429,6 +432,3 @@ fun LanguageDropdownMenu(
         }
     }
 }
-
-
-

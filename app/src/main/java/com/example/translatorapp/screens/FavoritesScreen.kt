@@ -66,6 +66,7 @@ fun FavoritesScreen(
         )
     }
 }
+
 @Composable
 fun Loading(){
     val infiniteTransition = rememberInfiniteTransition()
@@ -92,6 +93,7 @@ fun Loading(){
         )
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesContent(

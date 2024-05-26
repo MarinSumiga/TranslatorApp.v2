@@ -23,17 +23,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.translatorapp.navigation.Screens
-import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
 fun SignUpScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: SignUpViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     val context = LocalContext.current
 
     Column(
@@ -69,25 +68,21 @@ fun SignUpScreen(
         Button(
             onClick = {
                 if (email.isNotEmpty() && password.isNotEmpty()) {
-
-                    firebaseAuth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                navController.navigate(Screens.SignInScreen.route)
-                                navController.popBackStack(Screens.SignUpScreen.route, true)
-                                Toast.makeText(context, "Sign Up Successful", Toast.LENGTH_SHORT)
-                                    .show()
-                            } else {
-                                Toast.makeText(context, it.exception.toString(), Toast.LENGTH_SHORT)
-                                    .show()
-                            }
+                    viewModel.signUp(email, password,
+                        onSuccess = {
+                            navController.navigate(Screens.MainScreen.route)
+                        },
+                        onError = { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         }
+                    )
                 } else {
-                    Toast.makeText(context, "Empty fields are not allowed!"
-                        , Toast.LENGTH_SHORT)
+                    Toast.makeText(
+                        context, "Empty fields are not allowed!", Toast.LENGTH_SHORT
+                    )
                         .show()
                 }
-                      },
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Sign Up")

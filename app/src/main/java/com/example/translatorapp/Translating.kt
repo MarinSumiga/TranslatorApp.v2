@@ -23,6 +23,7 @@ const val ES = SPANISH
 const val FR = FRENCH
 
 class TranslatorClass {
+
     private val options =
         TranslatorOptions.Builder()
             .setSourceLanguage(baseLanguage.value)
